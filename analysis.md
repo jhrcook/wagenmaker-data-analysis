@@ -82,6 +82,23 @@ data <- data %.% {
 }
 ```
 
+Exclude data:
+
+-   were aware of the research goal
+-   did not understand the cartoons
+
+``` r
+excluded_subjects <- data %.% {
+  filter(aware_of_goal | !comprehension_of_cartoons | total_correct <= 2)
+  u_pull(subject_number)
+}
+
+data <- data %>%
+  mutate(excluded_data = subject_number %in% excluded_subjects)
+```
+
+48 subjects were excluded from the data.
+
 ## Data visualization
 
 ``` r
@@ -99,7 +116,7 @@ data %>%
   labs(x = NULL, y = "fraction")
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](analysis_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 data %>%
@@ -122,11 +139,11 @@ data %>%
   labs(x = NULL, y = "fraction")
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](analysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 rating_counts <- data %.% {
-  filter(!is.na(rating))
+  filter(!is.na(rating) & !excluded_data)
   count(condition, rating, cartoon_number)
   tidyr::complete(condition, rating, cartoon_number, fill = list(n = 0))
   mutate(cartoon_number = glue::glue("cartoon {cartoon_number}"))
@@ -149,7 +166,7 @@ rating_counts %>%
   )
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 rating_counts %>%
@@ -170,7 +187,7 @@ rating_counts %>%
   )
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 rating_counts %.%
@@ -207,7 +224,7 @@ rating_counts %.%
   )
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 rating_summaries <- data %>%
@@ -217,7 +234,8 @@ rating_summaries <- data %>%
     condition,
     gender,
     comprehension_of_cartoons,
-    correct
+    correct,
+    excluded_data
   ) %>%
   summarize(
     avg_rating = mean(rating),
@@ -230,18 +248,20 @@ rating_summaries <- data %>%
 rating_summaries %>%
   ggplot(aes(x = avg_age, y = avg_rating)) +
   geom_jitter(
-    aes(color = condition),
+    aes(color = condition, shape = excluded_data),
     width = 0.5,
     height = 0.1,
-    size = 2,
-    alpha = 0.8
+    size = 1.5,
+    alpha = 0.7
   ) +
   scale_color_brewer(type = "qual", palette = "Set1") +
+  scale_shape_manual(values=c(19, 4), labels=c("included", "excluded")) +
   labs(
     x = "avgerage age",
     y = "average cartoon rating",
-    color = "condition"
+    color = "condition",
+    shape = NULL
   )
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](analysis_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
