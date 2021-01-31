@@ -1,0 +1,22 @@
+name: "wagenmaker-data-analysis"
+title: "Analyzing a replication of the Facial Feedback Hypothesis"
+base_url: https://jhrcook.github.io/wagenmaker-data-analysis/
+repository_url: https://github.com/jhrcook/wagenmaker-data-analysis
+description: |
+  "My own visualization and statistical analysis of the results from a replication study of the classic physicology study, *Inhibiting and Facilitating Conditions of the Human Smile: A Nonobtrusive Test of the Facial Feedback Hypothesis* by Strack, Martin, and Stepper (1988)."
+output_dir: "docs"
+exclude: ["data/*.csv"]
+navbar:
+  search: true
+  right:
+    - text: "Analysis"
+      href: index.html
+    - text: "About"
+      href: about.html
+    - icon: fab fa-github
+      href: https://github.com/jhrcook/distill-example
+    - icon: fab fa-twitter
+      href: https://twitter.com/JoshDoesA
+    - icon: fas fa-laptop
+      href: https://joshuacook.netlify.app
+output: distill::distill_article

@@ -1,13 +1,39 @@
-# Analyzing the results of *Registered Replication Report: Strack, Martin, and Stepper (1988)*
+---
+title: "Analyzing the results of *Registered Replication Report: Strack, Martin, and Stepper (1988)*"
+description: |
+  My own visualization and statistical analysis of the data from a replication study of this famous phsycology paper.
+author:
+  - first_name: "Joshua"
+    last_name: "Cook"
+    url: https://joshuacook.netlify.app
+    orcid_id: 0000-0001-9815-6879
+date: "January 31, 2021"
+output:
+  distill::distill_article:
+    toc: true
+---
 
-Josh Cook <br>
-January 30, 2021
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = "#>", dpi = 400)
+
+library(jhcutils)
+library(mustashe)
+library(nakedpipe)
+library(magrittr)
+library(tidyverse)
+
+theme_set(
+  theme_minimal() +
+    theme(strip.text = element_text(face = "bold"))
+)
+```
 
 ## Data preparation
 
-``` r
+```{r, echo=TRUE}
 subjects_to_remove <- c("63", "39")
 
+# CLean the initial data columns.
 data <- read_csv("data/Wagenmakers-data_modified.csv") %.% {
   janitor::clean_names()
   mutate(
@@ -25,49 +51,8 @@ data <- read_csv("data/Wagenmakers-data_modified.csv") %.% {
   )
   filter(!subject_number %in% subjects_to_remove)
 }
-```
 
-    #>
-    #> ── Column specification ────────────────────────────────────────────────────────
-    #> cols(
-    #>   .default = col_double(),
-    #>   guess_of_purpose = col_character(),
-    #>   `Occupation / Field of study` = col_character()
-    #> )
-    #> ℹ Use `spec()` for the full column specifications.
-
-``` r
-head(data)
-```
-
-    #> # A tibble: 6 x 22
-    #>   subject_number participant_id condition cartoon_1_corre… cartoon_2_corre…
-    #>   <fct>          <fct>              <dbl> <lgl>            <lgl>
-    #> 1 1              1                      0 TRUE             TRUE
-    #> 2 2              2                      1 TRUE             TRUE
-    #> 3 3              3                      0 TRUE             TRUE
-    #> 4 4              4                      1 TRUE             TRUE
-    #> 5 5              5                      0 TRUE             TRUE
-    #> 6 6              6                      1 FALSE            FALSE
-    #> # … with 17 more variables: cartoon_3_correct <lgl>, cartoon_4_correct <lgl>,
-    #> #   total_correct <dbl>, task_1 <dbl>, task_2 <dbl>, cartoon_1_rating <dbl>,
-    #> #   cartoon_2_rating <dbl>, cartoon_3_rating <dbl>, cartoon_4_rating <dbl>,
-    #> #   self_reported_task_performance <dbl>, comprehension_of_cartoons <lgl>,
-    #> #   aware_of_goal <lgl>, guess_of_purpose <chr>, age <dbl>, gender <chr>,
-    #> #   student <lgl>, occupation_field_of_study <chr>
-
-``` r
-naniar::miss_var_summary(data) %>% filter(n_miss > 0)
-```
-
-    #> # A tibble: 3 x 3
-    #>   variable                  n_miss pct_miss
-    #>   <chr>                      <int>    <dbl>
-    #> 1 guess_of_purpose               2    1.11
-    #> 2 cartoon_2_rating               1    0.556
-    #> 3 occupation_field_of_study      1    0.556
-
-``` r
+# Pivot the data into a long format.
 data <- data %.% {
   select(-contains("task"), -guess_of_purpose)
   pivot_longer(cols = c(contains("cartoon"), -comprehension_of_cartoons))
@@ -82,12 +67,23 @@ data <- data %.% {
 }
 ```
 
-Exclude data:
+```{r}
+naniar::miss_var_summary(data) %>%
+  filter(n_miss > 0) %>%
+  rename(
+    `num. missing` = n_miss,
+    `percent missing` = pct_miss
+  ) %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+```
 
--   were aware of the research goal
--   did not understand the cartoons
+Exclude subjects who:
 
-``` r
+- were aware of the research goal,
+- did not understand the cartoons
+
+```{r, echo=TRUE}
 excluded_subjects <- data %.% {
   filter(aware_of_goal | !comprehension_of_cartoons | total_correct <= 2)
   u_pull(subject_number)
@@ -97,11 +93,12 @@ data <- data %>%
   mutate(excluded_data = subject_number %in% excluded_subjects)
 ```
 
-48 subjects were excluded from the data.
+`r length(excluded_subjects)` subjects were excluded from the data.
+
 
 ## Data visualization
 
-``` r
+```{r}
 data %>%
   filter(!is.na(rating)) %>%
   ggplot(aes(x = condition, y = rating)) +
@@ -116,9 +113,7 @@ data %>%
   labs(x = NULL, y = "fraction")
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
-
-``` r
+```{r}
 data %>%
   filter(!is.na(rating)) %>%
   ggplot(aes(x = condition, y = rating)) +
@@ -139,9 +134,8 @@ data %>%
   labs(x = NULL, y = "fraction")
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-``` r
+```{r}
 rating_counts <- data %.% {
   filter(!is.na(rating) & !excluded_data)
   count(condition, rating, cartoon_number)
@@ -166,9 +160,7 @@ rating_counts %>%
   )
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
-
-``` r
+```{r}
 rating_counts %>%
   ggplot(aes(x = factor(rating), y = frac)) +
   facet_wrap(~cartoon_number) +
@@ -187,9 +179,7 @@ rating_counts %>%
   )
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
-
-``` r
+```{r}
 rating_counts %.%
   {
     select(-n)
@@ -206,10 +196,10 @@ rating_counts %.%
     size = 1
   ) +
   geom_line(
-    aes(color = difference),
     group = 1,
-    alpha = 0.3,
-    size = 1.3
+    alpha = 0.2,
+    size = 1.3,
+    color = "black"
   ) +
   geom_point(aes(color = difference), size = 2.5) +
   scale_color_gradient2(
@@ -224,9 +214,7 @@ rating_counts %.%
   )
 ```
 
-![](analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
-
-``` r
+```{r, message=FALSE, warning=FALSE}
 rating_summaries <- data %>%
   filter(!is.na(rating)) %>%
   group_by(
@@ -244,7 +232,7 @@ rating_summaries <- data %>%
   ungroup()
 ```
 
-``` r
+```{r}
 rating_summaries %>%
   ggplot(aes(x = avg_age, y = avg_rating)) +
   geom_jitter(
@@ -255,7 +243,7 @@ rating_summaries %>%
     alpha = 0.7
   ) +
   scale_color_brewer(type = "qual", palette = "Set1") +
-  scale_shape_manual(values=c(19, 4), labels=c("included", "excluded")) +
+  scale_shape_manual(values = c(19, 4), labels = c("included", "excluded")) +
   labs(
     x = "avgerage age",
     y = "average cartoon rating",
@@ -263,5 +251,3 @@ rating_summaries %>%
     shape = NULL
   )
 ```
-
-![](analysis_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->

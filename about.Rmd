@@ -1,0 +1,22 @@
+---
+title: "About the studies"
+description: |
+  More information on the original Strack *et al* (1988) study and the replication study by Wagenmaker *et al.* (2016)
+author:
+  - first_name: "Joshua"
+    last_name: "Cook"
+    url: https://joshuacook.netlify.app
+    orcid_id: 0000-0001-9815-6879
+date: "January 31, 2021"
+output:
+  distill::distill_article:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Distill is a publication format for scientific and technical writing, native to the web.
+
+Learn more about using Distill for R Markdown at <https://rstudio.github.io/distill>.
