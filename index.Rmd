@@ -1,5 +1,5 @@
 ---
-title: "Analyzing the results of *Registered Replication Report: Strack, Martin, and Stepper (1988)*"
+title: "Analyzing the results of \"Registered Replication Report: Strack, Martin, and Stepper (1988)\""
 description: |
   My own visualization and statistical analysis of the data from a replication study of this famous phsycology paper.
 author:
@@ -24,7 +24,10 @@ library(tidyverse)
 
 theme_set(
   theme_minimal() +
-    theme(strip.text = element_text(face = "bold"))
+    theme(
+      strip.text = element_text(face = "bold"),
+      plot.title = element_text(hjust = 0.5)
+    )
 )
 ```
 
@@ -249,5 +252,169 @@ rating_summaries %>%
     y = "average cartoon rating",
     color = "condition",
     shape = NULL
+  )
+```
+
+## Analysis
+
+```{r}
+library(bayestestR)
+library(see)
+library(tidybayes)
+library(bayesplot)
+library(rstanarm)
+```
+
+```{r}
+model_data <- data %.% {
+  filter(!excluded_data)
+  filter(correct)
+  mutate(cartoon_number = factor(cartoon_number))
+}
+```
+
+
+```{r}
+stash("m1", depends_on = "model_data", {
+  m1 <- stan_lm(
+    rating ~ 1 + cartoon_number,
+    data = model_data,
+    prior = R2(0.5),
+    prior_intercept = normal(0, 5),
+    seed = 0,
+    cores = 2
+  )
+  m1$loo <- rstanarm::loo(m1, cores = 2)
+  m1
+})
+```
+
+```{r}
+plotdata <- model_data %.% {
+  select(cartoon_number, rating)
+  mutate(pred = predict(m1))
+  pivot_longer(c(rating, pred))
+}
+
+ggplot(plotdata, aes(x = value)) +
+  facet_wrap(~cartoon_number) +
+  geom_density(aes(color = name, fill = name), alpha = 0.2, size = 1)
+```
+
+```{r}
+stash("m2", depends_on = "model_data", {
+  m2 <- stan_lmer(
+    rating ~ (1 | subject_number) + (1 | cartoon_number) + condition,
+    data = model_data,
+    seed = 0,
+    cores = 2
+  )
+  m2$loo <- rstanarm::loo(m2, cores = 2, k_threshold = 0.7)
+  m2
+})
+```
+
+```{r message=FALSE, warning=FALSE}
+as_tibble(
+  bayestestR::describe_posterior(
+    m2,
+    effects = "all",
+    parameters = "smile|cartoon"
+  )
+) %>%
+  select(-Effects)
+```
+
+```{r}
+m2_post_main <- as.data.frame(m2) %>%
+  as_tibble() %>%
+  select(!contains("subject_number"))
+
+m2_post_main %>%
+  select(-`Sigma[cartoon_number:(Intercept),(Intercept)]`) %>%
+  mutate(sample_id = row_number()) %>%
+  pivot_longer(-sample_id) %>%
+  mutate(
+    name = str_remove(name, "^b\\[\\(Intercept\\) cartoon_number\\:"),
+    name = str_remove(name, "\\]$"),
+    name = str_remove(name, "^condition"),
+    name = str_replace_all(name, "_", " "),
+    name = fct_rev(fct_inorder(name))
+  ) %>%
+  ggplot(aes(value, name)) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  ggridges::geom_density_ridges(alpha = 0.4, bandwidth = 0.05) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(
+    x = "posterior",
+    y = NULL,
+    title = "Posterior distribtions for model 2"
+  )
+```
+
+```{r}
+as_tibble(
+  bayestestR::describe_posterior(
+    m2,
+    effects = "random",
+    paramters = "subject_number"
+  )
+) %>%
+  filter(Effects == "random") %>%
+  arrange(Median) %>%
+  mutate(Parameter = fct_inorder(Parameter)) %>%
+  ggplot(aes(Parameter)) +
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.5) +
+  geom_linerange(aes(ymin = CI_low, ymax = CI_high), alpha = 0.2) +
+  geom_point(aes(y = Median, color = Median), alpha = 0.7, size = 1) +
+  scale_color_gradient2(mid = "grey80") +
+  theme(
+    axis.text.x = element_blank(),
+    panel.grid.major.x = element_blank()
+  ) +
+  labs(
+    x = "test subjects",
+    y = "posterior",
+    title = "Distribution of subject varying intercepts"
+  )
+```
+
+```{r}
+stash("m3", depends_on = "model_data", {
+  m3 <- stan_lmer(
+    rating ~ (1 | subject_number) + (1 | cartoon_number) + condition + gender + student + age,
+    data = model_data,
+    seed = 0,
+    cores = 2
+  )
+  m3$loo <- rstanarm::loo(m3, cores = 2)
+  m3
+})
+```
+
+```{r}
+stash("model_comparison", depends_on = c("m1", "m2", "m3", "model_data"), {
+  model_comparison <- loo_compare(m1, m2, m3)
+})
+model_comparison
+```
+
+```{r}
+m2_pred <- as.data.frame(t(as.matrix(posterior_predict(m2))))
+m2_pred_mean <- apply(m2_pred, 1, mean)
+
+model_data %>%
+  mutate(post_pred = m2_pred_mean) %>%
+  ggplot(aes(rating, post_pred)) +
+  geom_jitter(aes(color = post_pred - rating), width = 0.1, height = 0.1) +
+  scale_x_continuous(breaks = 0:10) +
+  scale_y_continuous(breaks = 0:10) +
+  scale_color_gradient2(mid = "grey70") +
+  coord_fixed() +
+  labs(
+    x = "subject rating",
+    y = "predicted rating",
+    color = "error",
+    title = "Posterior predictions by Model 2"
   )
 ```
