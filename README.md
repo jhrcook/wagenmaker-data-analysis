@@ -5,7 +5,7 @@
 
 ---
 
-In [*Registered Replication Report: Strack, Martin, & Stepper (1988)*](Wagenmaker-et-al_2016_APS.pdf) by Wagenmaker *et al.* (2016), the authors conducted a replication study of one of the most popular and heavily cited papers on the association between physical acts and behaviour.
+In [*Registered Replication Report: Strack, Martin, & Stepper (1988)*](papers/Wagenmaker-et-al_2016_APS.pdf) by Wagenmaker *et al.* (2016), the authors conducted a replication study of one of the most popular and heavily cited papers on the association between physical acts and behavior, [*Inhibiting and Facilitating Conditions of the Human Smile: A Nonobtrusive Test of the Facial Feedback Hypothesis*](papers/Strack et al. 1988 - Inhibiting and facilitating conditions of the human smile - a nonobtrusive test of the facial feedback hypothesis.pdf).
 I was curious about the results, so I am conducting my own exploration of the data and statistical analysis.
 
 ---
