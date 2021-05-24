@@ -92,8 +92,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-01-31"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-01-31"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-05-23"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-05-23"/>
   <meta name="article:author" content="Joshua Cook"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -112,7 +112,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","output"]}},"value":[{"type":"character","attributes":{},"value":["Analyzing the results of \"Registered Replication Report: Strack, Martin, and Stepper (1988)\""]},{"type":"character","attributes":{},"value":["My own visualization and statistical analysis of the data from a replication study of this famous phsycology paper.\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["first_name","last_name","url","orcid_id"]}},"value":[{"type":"character","attributes":{},"value":["Joshua"]},{"type":"character","attributes":{},"value":["Cook"]},{"type":"character","attributes":{},"value":["https://joshuacook.netlify.app"]},{"type":"character","attributes":{},"value":["0000-0001-9815-6879"]}]}]},{"type":"character","attributes":{},"value":["January 31, 2021"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["toc"]}},"value":[{"type":"logical","attributes":{},"value":[true]}]}]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","output"]}},"value":[{"type":"character","attributes":{},"value":["Analyzing the results of \"Registered Replication Report: Strack, Martin, and Stepper (1988)\""]},{"type":"character","attributes":{},"value":["My own visualization and statistical analysis of the data from a replication study of this famous phsycology paper.\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["first_name","last_name","url","orcid_id"]}},"value":[{"type":"character","attributes":{},"value":["Joshua"]},{"type":"character","attributes":{},"value":["Cook"]},{"type":"character","attributes":{},"value":["https://joshuacook.netlify.app"]},{"type":"character","attributes":{},"value":["0000-0001-9815-6879"]}]}]},{"type":"character","attributes":{},"value":["May 23, 2021"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["toc"]}},"value":[{"type":"logical","attributes":{},"value":[true]}]}]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2037,7 +2037,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </script>
 
   <!--/radix_placeholder_distill-->
-  <script src="site_libs/header-attrs-2.6/header-attrs.js"></script>
+  <script src="site_libs/header-attrs-2.8/header-attrs.js"></script>
   <script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
   <link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
   <script src="site_libs/popper-2.6.0/popper.min.js"></script>
@@ -2059,7 +2059,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Analyzing the results of \"Registered Replication Report: Strack, Martin, and Stepper (1988)\"","description":"My own visualization and statistical analysis of the data from a replication study of this famous phsycology paper.","authors":[{"author":"Joshua Cook","authorURL":"https://joshuacook.netlify.app","affiliation":"&nbsp;","affiliationURL":"#","orcidID":"0000-0001-9815-6879"}],"publishedDate":"2021-01-31T00:00:00.000+00:00","citationText":"Cook, 2021"}
+{"title":"Analyzing the results of \"Registered Replication Report: Strack, Martin, and Stepper (1988)\"","description":"My own visualization and statistical analysis of the data from a replication study of this famous phsycology paper.","authors":[{"author":"Joshua Cook","authorURL":"https://joshuacook.netlify.app","affiliation":"&nbsp;","affiliationURL":"#","orcidID":"0000-0001-9815-6879"}],"publishedDate":"2021-05-23T00:00:00.000+00:00","citationText":"Cook, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2101,7 +2101,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
   true
 
-<br/>January 31, 2021
+<br/>May 23, 2021
 </div>
 
 <div class="d-article">
@@ -2205,7 +2205,9 @@ rating
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>excluded_subjects</span> <span class='op'>&lt;-</span> <span class='va'>data</span> <span class='op'>%.%</span> <span class='op'>{</span>
   <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>aware_of_goal</span> <span class='op'>|</span> <span class='op'>!</span><span class='va'>comprehension_of_cartoons</span> <span class='op'>|</span> <span class='va'>total_correct</span> <span class='op'>&lt;=</span> <span class='fl'>2</span><span class='op'>)</span>
-  <span class='fu'><a href='https://rdrr.io/pkg/jhcutils/man/u_pull.html'>u_pull</a></span><span class='op'>(</span><span class='va'>subject_number</span><span class='op'>)</span>
+  <span class='fu'>pull</span><span class='op'>(</span><span class='va'>subject_number</span><span class='op'>)</span>
+  <span class='fu'><a href='https://rdrr.io/r/base/unlist.html'>unlist</a></span><span class='op'>(</span><span class='op'>)</span>
+  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='op'>)</span>
 <span class='op'>}</span>
 
 <span class='va'>data</span> <span class='op'>&lt;-</span> <span class='va'>data</span> <span class='op'>%&gt;%</span>
@@ -2254,14 +2256,14 @@ rating
 </div>
 <div class="layout-chunk" data-layout="l-body">
 <pre><code>#&gt; # A tibble: 6 x 12
-#&gt;   Parameter  Median    CI  CI_low CI_high    pd ROPE_CI ROPE_low
-#&gt;   &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-#&gt; 1 conditio… -0.0408  0.89 -0.399    0.321 0.575      89   -0.207
-#&gt; 2 b[(Inter… -0.427   0.89 -1.05     0.231 0.880      89   -0.207
-#&gt; 3 b[(Inter…  0.337   0.89 -0.285    1.01  0.839      89   -0.207
-#&gt; 4 b[(Inter… -0.378   0.89 -1.04     0.241 0.853      89   -0.207
-#&gt; 5 b[(Inter…  0.437   0.89 -0.136    1.15  0.899      89   -0.207
-#&gt; 6 Sigma[ca…  0.378   0.89  0.0342   1.43  1          89   -0.207
+#&gt;   Parameter        Median    CI  CI_low CI_high    pd ROPE_CI ROPE_low
+#&gt;   &lt;chr&gt;             &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+#&gt; 1 conditionsmile  -0.0408  0.95 -0.499    0.405 0.575    0.95   -0.207
+#&gt; 2 b[(Intercept) … -0.427   0.95 -1.32     0.410 0.880    0.95   -0.207
+#&gt; 3 b[(Intercept) …  0.337   0.95 -0.449    1.27  0.839    0.95   -0.207
+#&gt; 4 b[(Intercept) … -0.378   0.95 -1.24     0.494 0.853    0.95   -0.207
+#&gt; 5 b[(Intercept) …  0.437   0.95 -0.352    1.33  0.899    0.95   -0.207
+#&gt; 6 Sigma[cartoon_…  0.378   0.95  0.0342   2.26  1        0.95   -0.207
 #&gt; # … with 4 more variables: ROPE_high &lt;dbl&gt;, ROPE_Percentage &lt;dbl&gt;,
 #&gt; #   Rhat &lt;dbl&gt;, ESS &lt;dbl&gt;</code></pre>
 </div>

@@ -7,7 +7,7 @@ author:
     last_name: "Cook"
     url: https://joshuacook.netlify.app
     orcid_id: 0000-0001-9815-6879
-date: "January 31, 2021"
+date: "May 23, 2021"
 output:
   distill::distill_article:
     toc: true
@@ -16,7 +16,6 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = "#>", dpi = 400)
 
-library(jhcutils)
 library(mustashe)
 library(nakedpipe)
 library(magrittr)
@@ -89,7 +88,9 @@ Exclude subjects who:
 ```{r, echo=TRUE}
 excluded_subjects <- data %.% {
   filter(aware_of_goal | !comprehension_of_cartoons | total_correct <= 2)
-  u_pull(subject_number)
+  pull(subject_number)
+  unlist()
+  unique()
 }
 
 data <- data %>%
