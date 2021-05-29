@@ -19,6 +19,7 @@ knitr::opts_chunk$set(echo = FALSE, comment = "#>", dpi = 400)
 library(mustashe)
 library(nakedpipe)
 library(magrittr)
+library(patchwork)
 library(tidyverse)
 
 theme_set(
@@ -31,6 +32,10 @@ theme_set(
 ```
 
 ## Data preparation
+
+Below is the code for preparaing the data.
+Two subjects, 63 and 39, were removed because they had a lot of missing data points.
+Otherwise, the data was left as is and only rearranged for ease of use in data visualization and modeling.
 
 ```{r, echo=TRUE}
 subjects_to_remove <- c("63", "39")
@@ -69,6 +74,8 @@ data <- data %.% {
 }
 ```
 
+We can see that there are a few subjects whose occupation is unknown and there is one missing cartoon rating data point (belonging to subject 31).
+
 ```{r}
 naniar::miss_var_summary(data) %>%
   filter(n_miss > 0) %>%
@@ -80,7 +87,7 @@ naniar::miss_var_summary(data) %>%
   kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
-Exclude subjects who:
+Per the original experimental design and protocol, subjects were excluded if they:
 
 - were aware of the research goal,
 - did not understand the cartoons
@@ -97,25 +104,38 @@ data <- data %>%
   mutate(excluded_data = subject_number %in% excluded_subjects)
 ```
 
-`r length(excluded_subjects)` subjects were excluded from the data.
-
+This resulted in `r length(excluded_subjects)` subjects that were excluded from the analysis.
 
 ## Data visualization
+
+As always, it is important to visualize the data before statistical analysis.
+The goal is to get a general understanding for the scale of effect sizes and patterns that will be tested later.
+
+The plot below shows the distribution of ratings for each of the four cartoons, separated by the frown/smile experimental condition.
+Visually, there does not appear to be much of a difference.
 
 ```{r}
 data %>%
   filter(!is.na(rating)) %>%
-  ggplot(aes(x = condition, y = rating)) +
+  ggplot(aes(x = condition, y = rating, color = condition)) +
   facet_wrap(~cartoon_number) +
+  geom_point(
+    size = 1,
+    alpha = 0.5,
+    position = position_jitterdodge(jitter.width = 0.4, jitter.height = 0.25, seed = 0),
+    show.legend = FALSE
+  ) +
   geom_boxplot(
-    aes(color = condition, fill = condition),
+    aes(fill = condition),
     alpha = 0.2,
     outlier.shape = NA
   ) +
   scale_color_brewer(type = "qual", palette = "Set1") +
   scale_fill_brewer(type = "qual", palette = "Set1") +
-  labs(x = NULL, y = "fraction")
+  labs(x = NULL, y = "rating")
 ```
+
+We can further subdivide the participants by sex, but this does not reveal a strong pattern, either.
 
 ```{r}
 data %>%
@@ -126,7 +146,8 @@ data %>%
     aes(color = gender),
     size = 1,
     alpha = 0.5,
-    position = position_jitterdodge(0.2, 0.25, seed = 0)
+    position = position_jitterdodge(jitter.width = 0.2, jitter.height = 0.25, seed = 0),
+    show.legend = FALSE
   ) +
   geom_boxplot(
     aes(color = gender, fill = gender),
@@ -135,16 +156,17 @@ data %>%
   ) +
   scale_color_brewer(type = "qual", palette = "Set2") +
   scale_fill_brewer(type = "qual", palette = "Set2") +
-  labs(x = NULL, y = "fraction")
+  labs(x = NULL, y = "rating")
 ```
 
+The next plot presents the distribution of rating scores per cartoon for the two conditions side-by-side.
+If we assume that these distributions can be approximated by Gaussian distributions, there does not seem to be a difference between the two groups.
 
 ```{r}
 rating_counts <- data %.% {
   filter(!is.na(rating) & !excluded_data)
   count(condition, rating, cartoon_number)
   tidyr::complete(condition, rating, cartoon_number, fill = list(n = 0))
-  mutate(cartoon_number = glue::glue("cartoon {cartoon_number}"))
   group_by(condition, cartoon_number)
   mutate(frac = n / sum(n))
   ungroup()
@@ -153,10 +175,11 @@ rating_counts <- data %.% {
 
 rating_counts %>%
   ggplot(aes(x = factor(rating), y = n)) +
-  facet_grid(condition ~ cartoon_number) +
+  facet_wrap(~cartoon_number, nrow = 2) +
   geom_col(aes(fill = condition), position = "dodge") +
   scale_fill_brewer(type = "qual", palette = "Set1") +
   scale_y_continuous(expand = expansion(c(0, 0.02))) +
+  theme(legend.position = "bottom") +
   labs(
     x = "cartoon rating",
     y = "count",
@@ -164,24 +187,10 @@ rating_counts %>%
   )
 ```
 
-```{r}
-rating_counts %>%
-  ggplot(aes(x = factor(rating), y = frac)) +
-  facet_wrap(~cartoon_number) +
-  geom_line(
-    aes(group = condition, color = condition),
-    alpha = 0.5,
-    size = 1
-  ) +
-  geom_point(aes(color = condition), size = 2, alpha = 0.8) +
-  scale_color_brewer(type = "qual", palette = "Set1") +
-  scale_y_continuous(expand = expansion(c(0.01, 0.02))) +
-  labs(
-    x = "cartoon rating",
-    y = "fraction",
-    color = "condition"
-  )
-```
+Instead of showing the number of different ratings for each cartoon in each experimental condition, we can subtract one the counts of one from the other.
+This is shown below, where the number of each rating in the frown condition is subtract from that of the smiling condition.
+If a cartoon was rated higher in the smiling condition than in the frowning condition, we would expect to see a general increase in the plots from left to right.
+Instead, there is no obvious trend and the line wanders around 0 indicating a lack of a trend.
 
 ```{r}
 rating_counts %.%
@@ -193,16 +202,10 @@ rating_counts %.%
   ggplot(aes(x = factor(rating), y = difference)) +
   facet_wrap(~cartoon_number) +
   geom_hline(yintercept = 0) +
-  geom_linerange(
-    aes(ymax = difference),
-    ymin = 0,
-    alpha = 0.2,
-    size = 1
-  ) +
   geom_line(
     group = 1,
     alpha = 0.2,
-    size = 1.3,
+    size = 0.9,
     color = "black"
   ) +
   geom_point(aes(color = difference), size = 2.5) +
@@ -217,6 +220,10 @@ rating_counts %.%
     y = "diff. fraction (smile - frown)"
   )
 ```
+
+Another factor to consider is the age of the participant.
+It is possible that some cartoons appealed to people of different ages due to different perceptions of cultural references, political affiliations, etc.
+From the plot below, we can see that most patients were around 20 years old and there is no correlation between age of the participant and their average rating of the cartoons.
 
 ```{r, message=FALSE, warning=FALSE}
 rating_summaries <- data %>%
@@ -237,7 +244,45 @@ rating_summaries <- data %>%
 ```
 
 ```{r}
-rating_summaries %>%
+age_vs_rating_historgram_factory <- function(d, x, flipped = FALSE) {
+  min_x <- d %>%
+    pull({{ x }}) %>%
+    unlist() %>%
+    min()
+  max_x <- d %>%
+    pull({{ x }}) %>%
+    unlist() %>%
+    max()
+  p <- d %>%
+    ggplot(aes(x = {{ x }})) +
+    geom_histogram(aes(y = after_stat(density)), bins = 30) +
+    geom_density(fill = "gray50", alpha = 0.3) +
+    scale_x_continuous(expand = expansion(c(0.02, 0.02)), limits = c(min_x, max_x)) +
+    scale_y_continuous(expand = expansion(c(0, 0.02)))
+
+  if (flipped) {
+    p <- p +
+      coord_flip() +
+      theme(
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank()
+      )
+  } else {
+    p <- p +
+      theme(
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank()
+      )
+  }
+
+  return(p)
+}
+
+
+age_hist <- age_vs_rating_historgram_factory(rating_summaries, x = avg_age)
+rating_hist <- age_vs_rating_historgram_factory(rating_summaries, x = avg_rating, flipped = TRUE)
+
+age_vs_rating_main <- rating_summaries %>%
   ggplot(aes(x = avg_age, y = avg_rating)) +
   geom_jitter(
     aes(color = condition, shape = excluded_data),
@@ -248,17 +293,33 @@ rating_summaries %>%
   ) +
   scale_color_brewer(type = "qual", palette = "Set1") +
   scale_shape_manual(values = c(19, 4), labels = c("included", "excluded")) +
+  scale_x_continuous(expand = expansion(c(0.02, 0.02))) +
+  scale_y_continuous(expand = expansion(c(0.02, 0.02))) +
+  theme(legend.position = "bottom") +
   labs(
     x = "avgerage age",
     y = "average cartoon rating",
-    color = "condition",
+    color = NULL,
     shape = NULL
   )
+
+layout <- "
+AAAAA#
+CCCCCB
+CCCCCB
+CCCCCB
+CCCCCB
+"
+
+(age_hist + rating_hist + age_vs_rating_main) + plot_layout(design = layout)
 ```
 
 ## Analysis
 
-```{r}
+Below is a statisical analysis of the main question of the study: does the act of smiling or frowning influence a participants perception of cartoons?
+We will use a Bayesian data analysis framework focused around the ['rstanarm'](https://CRAN.R-project.org/package=rstanarm) ([documentation](https://mc-stan.org/rstanarm/)) package and build hierarchical mixed-effects models to try to explain the influence of avarious experimental factors on the cartoon ratings.
+
+```{r, message=FALSE, warning=FALSE}
 library(bayestestR)
 library(see)
 library(tidybayes)

@@ -2098,9 +2098,9 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 </div>
 
 <div class="d-byline">
-
+  
   true
-
+  
 <br/>May 23, 2021
 </div>
 
@@ -2116,6 +2116,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 </nav>
 </div>
 <h2 id="data-preparation">Data preparation</h2>
+<p>Below is the code for preparaing the data. Two subjects, 63 and 39, were removed because they had a lot of missing data points. Otherwise, the data was left as is and only rearranged for ease of use in data visualization and modeling.</p>
 <div class="layout-chunk" data-layout="l-body">
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>subjects_to_remove</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"63"</span>, <span class='st'>"39"</span><span class='op'>)</span>
@@ -2155,6 +2156,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 </code></pre>
 </div>
 </div>
+<p>We can see that there are a few subjects whose occupation is unknown and there is one missing cartoon rating data point (belonging to subject 31).</p>
 <div class="layout-chunk" data-layout="l-body">
 <table class="table table-striped table-hover table-responsive" style="margin-left: auto; margin-right: auto;">
 <thead>
@@ -2196,7 +2198,7 @@ rating
 </tbody>
 </table>
 </div>
-<p>Exclude subjects who:</p>
+<p>Per the original experimental design and protocol, subjects were excluded if they:</p>
 <ul>
 <li>were aware of the research goal,</li>
 <li>did not understand the cartoons</li>
@@ -2215,30 +2217,34 @@ rating
 </code></pre>
 </div>
 </div>
-<p>48 subjects were excluded from the data.</p>
+<p>This resulted in 48 subjects that were excluded from the analysis.</p>
 <h2 id="data-visualization">Data visualization</h2>
+<p>As always, it is important to visualize the data before statistical analysis. The goal is to get a general understanding for the scale of effect sizes and patterns that will be tested later.</p>
+<p>The plot below shows the distribution of ratings for each of the four cartoons, separated by the frown/smile experimental condition. Visually, there does not appear to be much of a difference.</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="index_files/figure-html5/unnamed-chunk-4-1.png" width="2600" /></p>
 </div>
+<p>We can further subdivide the participants by sex, but this does not reveal a strong pattern, either.</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="index_files/figure-html5/unnamed-chunk-5-1.png" width="2600" /></p>
 </div>
+<p>The next plot presents the distribution of rating scores per cartoon for the two conditions side-by-side. If we assume that these distributions can be approximated by Gaussian distributions, there does not seem to be a difference between the two groups.</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="index_files/figure-html5/unnamed-chunk-6-1.png" width="2600" /></p>
 </div>
+<p>Instead of showing the number of different ratings for each cartoon in each experimental condition, we can subtract one the counts of one from the other. This is shown below, where the number of each rating in the frown condition is subtract from that of the smiling condition. If a cartoon was rated higher in the smiling condition than in the frowning condition, we would expect to see a general increase in the plots from left to right. Instead, there is no obvious trend and the line wanders around 0 indicating a lack of a trend.</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="index_files/figure-html5/unnamed-chunk-7-1.png" width="2600" /></p>
 </div>
-<div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-8-1.png" width="2600" /></p>
-</div>
+<p>Another factor to consider is the age of the participant. It is possible that some cartoons appealed to people of different ages due to different perceptions of cultural references, political affiliations, etc. From the plot below, we can see that most patients were around 20 years old and there is no correlation between age of the participant and their average rating of the cartoons.</p>
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-10-1.png" width="2600" /></p>
+<p><img src="index_files/figure-html5/unnamed-chunk-9-1.png" width="2600" /></p>
 </div>
 <h2 id="analysis">Analysis</h2>
+<p>Below is a statisical analysis of the main question of the study: does the act of smiling or frowning influence a participants perception of cartoons? We will use a Bayesian data analysis framework focused around the <a href="https://CRAN.R-project.org/package=rstanarm">‘rstanarm’</a> (<a href="https://mc-stan.org/rstanarm/">documentation</a>) package and build hierarchical mixed-effects models to try to explain the influence of avarious experimental factors on the cartoon ratings.</p>
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
@@ -2249,7 +2255,7 @@ rating
 
 </div>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-14-1.png" width="2600" /></p>
+<p><img src="index_files/figure-html5/unnamed-chunk-13-1.png" width="2600" /></p>
 </div>
 <div class="layout-chunk" data-layout="l-body">
 
@@ -2268,23 +2274,23 @@ rating
 #&gt; #   Rhat &lt;dbl&gt;, ESS &lt;dbl&gt;</code></pre>
 </div>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-17-1.png" width="2600" /></p>
+<p><img src="index_files/figure-html5/unnamed-chunk-16-1.png" width="2600" /></p>
 </div>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-18-1.png" width="2600" /></p>
+<p><img src="index_files/figure-html5/unnamed-chunk-17-1.png" width="2600" /></p>
 </div>
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
 <div class="layout-chunk" data-layout="l-body">
-<pre><code>#&gt; Model comparison based on LOO-CV:
+<pre><code>#&gt; Model comparison based on LOO-CV: 
 #&gt;    elpd_diff se_diff
-#&gt; m3   0.0       0.0
-#&gt; m2  -0.5       2.0
+#&gt; m3   0.0       0.0  
+#&gt; m2  -0.5       2.0  
 #&gt; m1 -19.8       7.6</code></pre>
 </div>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-21-1.png" width="2600" /></p>
+<p><img src="index_files/figure-html5/unnamed-chunk-20-1.png" width="2600" /></p>
 </div>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <!--radix_placeholder_article_footer-->

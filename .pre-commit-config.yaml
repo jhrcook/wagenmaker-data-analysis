@@ -6,19 +6,18 @@ repos:
     hooks:
     -   id: markdownlint
         args: [--fix]
-        exclude: "docs/site_libs/"
+        exclude: "docs/"
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
     -   id: trailing-whitespace
-        exclude: "docs/site_libs/"
+        exclude: "docs/"
     -   id: end-of-file-fixer
-        exclude: "docs/site_libs/"
+        exclude: "docs/"
     -   id: check-yaml
-        exclude: "docs/site_libs/"
+        exclude: "docs/"
     -   id: check-added-large-files
         args: ["--maxkb=80000"]
-        exclude: "docs/site_libs/"
 -   repo: https://github.com/pycqa/isort
     rev: 5.8.0
     hooks:
