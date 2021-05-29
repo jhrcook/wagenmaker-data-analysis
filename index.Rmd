@@ -19,6 +19,7 @@ knitr::opts_chunk$set(echo = FALSE, comment = "#>", dpi = 400)
 library(mustashe)
 library(nakedpipe)
 library(magrittr)
+library(glue)
 library(patchwork)
 library(tidyverse)
 
@@ -30,6 +31,10 @@ theme_set(
     )
 )
 ```
+
+## Background
+
+TODO (from README)
 
 ## Data preparation
 
@@ -84,7 +89,9 @@ naniar::miss_var_summary(data) %>%
     `percent missing` = pct_miss
   ) %>%
   kableExtra::kbl() %>%
-  kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover", "responsive")
+  )
 ```
 
 Per the original experimental design and protocol, subjects were excluded if they:
@@ -122,7 +129,11 @@ data %>%
   geom_point(
     size = 1,
     alpha = 0.5,
-    position = position_jitterdodge(jitter.width = 0.4, jitter.height = 0.25, seed = 0),
+    position = position_jitterdodge(
+      jitter.width = 0.4,
+      jitter.height = 0.25,
+      seed = 0
+    ),
     show.legend = FALSE
   ) +
   geom_boxplot(
@@ -146,7 +157,11 @@ data %>%
     aes(color = gender),
     size = 1,
     alpha = 0.5,
-    position = position_jitterdodge(jitter.width = 0.2, jitter.height = 0.25, seed = 0),
+    position = position_jitterdodge(
+      jitter.width = 0.2,
+      jitter.height = 0.25,
+      seed = 0
+    ),
     show.legend = FALSE
   ) +
   geom_boxplot(
@@ -245,19 +260,19 @@ rating_summaries <- data %>%
 
 ```{r}
 age_vs_rating_historgram_factory <- function(d, x, flipped = FALSE) {
-  min_x <- d %>%
+  x_vals <- d %>%
     pull({{ x }}) %>%
-    unlist() %>%
-    min()
-  max_x <- d %>%
-    pull({{ x }}) %>%
-    unlist() %>%
-    max()
+    unlist()
+  min_x <- min(x_vals)
+  max_x <- max(x_vals)
   p <- d %>%
     ggplot(aes(x = {{ x }})) +
     geom_histogram(aes(y = after_stat(density)), bins = 30) +
     geom_density(fill = "gray50", alpha = 0.3) +
-    scale_x_continuous(expand = expansion(c(0.02, 0.02)), limits = c(min_x, max_x)) +
+    scale_x_continuous(
+      expand = expansion(c(0.02, 0.02)),
+      limits = c(min_x, max_x)
+    ) +
     scale_y_continuous(expand = expansion(c(0, 0.02)))
 
   if (flipped) {
@@ -280,7 +295,11 @@ age_vs_rating_historgram_factory <- function(d, x, flipped = FALSE) {
 
 
 age_hist <- age_vs_rating_historgram_factory(rating_summaries, x = avg_age)
-rating_hist <- age_vs_rating_historgram_factory(rating_summaries, x = avg_rating, flipped = TRUE)
+rating_hist <- age_vs_rating_historgram_factory(
+  rating_summaries,
+  x = avg_rating,
+  flipped = TRUE
+)
 
 age_vs_rating_main <- rating_summaries %>%
   ggplot(aes(x = avg_age, y = avg_rating)) +
@@ -336,7 +355,11 @@ model_data <- data %.% {
 ```
 
 
-```{r}
+# Model 1. Covariate per cartoon
+
+Simple model: `rating ~ 1 + cartoon_number`
+
+```{r, echo=TRUE}
 stash("m1", depends_on = "model_data", {
   m1 <- stan_lm(
     rating ~ 1 + cartoon_number,
@@ -349,7 +372,28 @@ stash("m1", depends_on = "model_data", {
   m1$loo <- rstanarm::loo(m1, cores = 2)
   m1
 })
+
+m1
 ```
+
+The chains mix well and converge.
+
+```{r}
+mcmc_trace(m1, pars = c("(Intercept)", glue("cartoon_numberCartoon {c(2:4)}")))
+```
+
+The posterior distributions for the cartoons (Cartoon 1 is represented as the intercept) look good.
+They suggest that, on average, cartoon 2 and 4 were funnier than 1 and 3.
+
+```{r}
+mcmc_areas(
+  as.matrix(m1),
+  pars = c("(Intercept)", glue("cartoon_numberCartoon {c(2:4)}")),
+  prob = 0.89
+)
+```
+
+This simple model really just estimates the average rating for each cartoon.
 
 ```{r}
 plotdata <- model_data %.% {
@@ -363,36 +407,78 @@ ggplot(plotdata, aes(x = value)) +
   geom_density(aes(color = name, fill = name), alpha = 0.2, size = 1)
 ```
 
-```{r}
+### Model 2. Covariates per cartoon and experimental condition
+
+```{r, echo=TRUE}
 stash("m2", depends_on = "model_data", {
-  m2 <- stan_lmer(
+  m2 <- stan_lm(
+    rating ~ 1 + cartoon_number + condition,
+    data = model_data,
+    prior = R2(0.5),
+    prior_intercept = normal(0, 5),
+    seed = 0,
+    cores = 4
+  )
+  m2$loo <- rstanarm::loo(m2, cores = 2)
+  m2
+})
+
+m2
+```
+
+Even in this simple model, there is no evidence that the experimental condition (frown vs. smile) has any effect.
+
+```{r}
+mcmc_areas(
+  as.matrix(m2),
+  pars = c(
+    "(Intercept)",
+    glue("cartoon_numberCartoon {c(2:4)}"),
+    "conditionsmile"
+  ),
+  prob = 0.89
+)
+```
+
+### Model 3. Varying intercepts per subject and cartoon
+
+Model 3: `rating ~ (1 | subject_number) + (1 | cartoon_number) + condition`.
+
+A varying intercept per subject (132) and cartoon (4) with a single factor for the experimental condition where the intercept incorporates the frown group and the smile group is represented by `conditionsmile`.
+
+```{r, echo = TRUE}
+stash("m3", depends_on = "model_data", {
+  m3 <- stan_lmer(
     rating ~ (1 | subject_number) + (1 | cartoon_number) + condition,
     data = model_data,
     seed = 0,
-    cores = 2
+    cores = 3
   )
-  m2$loo <- rstanarm::loo(m2, cores = 2, k_threshold = 0.7)
-  m2
+  m3$loo <- rstanarm::loo(m3, cores = 3, k_threshold = 0.7)
+  m3
 })
+
+m3
 ```
 
 ```{r message=FALSE, warning=FALSE}
 as_tibble(
   bayestestR::describe_posterior(
-    m2,
+    m3,
     effects = "all",
     parameters = "smile|cartoon"
   )
 ) %>%
   select(-Effects)
 ```
+Looking at the posterior distributions of the covariates, we can see again that cartoons 2 and 4 tended to be more amusing than 1 and 3. However, the posterior for the smile covariate stradles 0, indicating this experimental condition had no effect on the rating.
 
 ```{r}
-m2_post_main <- as.data.frame(m2) %>%
+m3_post_main <- as.data.frame(m3) %>%
   as_tibble() %>%
   select(!contains("subject_number"))
 
-m2_post_main %>%
+m3_post_main %>%
   select(-`Sigma[cartoon_number:(Intercept),(Intercept)]`) %>%
   mutate(sample_id = row_number()) %>%
   pivot_longer(-sample_id) %>%
@@ -410,14 +496,17 @@ m2_post_main %>%
   labs(
     x = "posterior",
     y = NULL,
-    title = "Posterior distribtions for model 2"
+    title = "Posterior distribtions for model 3"
   )
 ```
+
+Below are the estimated varying effects for participants.
+Most were small, but a few participants were consistently less amused or more amused by the cartoons.
 
 ```{r}
 as_tibble(
   bayestestR::describe_posterior(
-    m2,
+    m3,
     effects = "random",
     paramters = "subject_number"
   )
@@ -435,48 +524,183 @@ as_tibble(
     panel.grid.major.x = element_blank()
   ) +
   labs(
-    x = "test subjects",
-    y = "posterior",
-    title = "Distribution of subject varying intercepts"
+    x = "participants",
+    y = "posterior distribution",
+    title = "Particiapnt varying intercepts",
+    color = "median"
   )
 ```
 
-```{r}
-stash("m3", depends_on = "model_data", {
-  m3 <- stan_lmer(
-    rating ~ (1 | subject_number) + (1 | cartoon_number) + condition + gender + student + age,
+### Model 4. Description...
+
+Model 4: `rating ~ (1 | subject_number) + (1 | cartoon_number) + condition + gender + student + age`
+
+Now use all available factors including the sex and age of the participant and whether or not they were a student.
+
+```{r, echo=TRUE}
+stash("m4", depends_on = "model_data", {
+  m4 <- stan_lmer(
+    rating ~ (1 | subject_number) +
+      (1 | cartoon_number) +
+      condition + gender + student + age,
     data = model_data,
     seed = 0,
     cores = 2
   )
-  m3$loo <- rstanarm::loo(m3, cores = 2)
-  m3
+  m4$loo <- rstanarm::loo(m4, cores = 2)
+  m4
 })
+
+m4
+```
+
+While the smile/frown condition still appears to be inconsequential along with gender, the impact of student and age may be meaningful.
+In particular, there may be a small but significant positive assoication between participant age and cartoon rating.
+
+```{r}
+mcmc_areas(
+  as.matrix(m4),
+  pars = c("conditionsmile", "genderM", "studentTRUE", "age"),
+  prob = 0.89
+)
 ```
 
 ```{r}
-stash("model_comparison", depends_on = c("m1", "m2", "m3", "model_data"), {
-  model_comparison <- loo_compare(m1, m2, m3)
+library(modelr)
+
+new_data_grid <- data_grid(
+  model_data,
+  condition, cartoon_number,
+  age = seq_range(age, 10)
+)
+
+m4_posteriors <- as.data.frame(m4) %>%
+  as_tibble() %>%
+  select(
+    `(Intercept)`,
+    age,
+    conditionsmile,
+    tidyselect::contains("b[(Intercept) cartoon_number:Cartoon_")
+  ) %>%
+  rename(intercept = `(Intercept)`)
+
+colnames(m4_posteriors) <- str_remove(
+  colnames(m4_posteriors),
+  "b\\[\\(Intercept\\) cartoon_number\\:"
+) %>%
+  str_remove("\\]")
+
+predictions <- tibble()
+
+for (i in seq(1, nrow(new_data_grid))) {
+  d <- unlist(new_data_grid[i, ])
+  pred <- m4_posteriors$intercept
+  pred <- pred + m4_posteriors$age * as.numeric(d[["age"]])
+  if (d[["condition"]] == "smile") {
+    pred <- pred + m4_posteriors$age
+  }
+  cartoon <- glue("Cartoon_{d[['cartoon_number']]}")
+  pred <- pred + unname(unlist(m4_posteriors[, cartoon]))
+  avg_pred <- mean(pred)
+  hdi_pred <- as.numeric(bayestestR::hdi(pred, ci = 0.89))[2:3]
+  pred_i <- tibble(
+    avg = avg_pred,
+    hdi_low = hdi_pred[[1]],
+    hdi_high = hdi_pred[[2]]
+  )
+  predictions <- bind_rows(predictions, pred_i)
+}
+
+bind_cols(predictions, new_data_grid) %>%
+  ggplot(aes(x = age, y = avg, color = condition)) +
+  facet_wrap(~cartoon_number) +
+  geom_lineribbon(
+    aes(ymin = hdi_low, ymax = hdi_high, fill = condition),
+    color = NA,
+    alpha = 0.2
+  ) +
+  geom_line(aes(color = condition)) +
+  scale_x_continuous(expand = expansion(c(0, 0))) +
+  scale_y_continuous(expand = expansion(c(0.02, 0.02))) +
+  scale_color_brewer(type = "qual", palette = "Set1") +
+  scale_fill_brewer(type = "qual", palette = "Set1") +
+  labs(
+    x = "participant age",
+    y = "predicted rating",
+    color = NULL,
+    shape = "condition",
+    title = "Predicted ratings by participant age"
+  )
+```
+
+### Model 5. Varying effect of age per cartoon
+
+```{r, echo=TRUE}
+stash("m5", depends_on = "model_data", {
+  m5 <- stan_lmer(
+    rating ~ (1 | subject_number) +
+      (1 + age + condition | cartoon_number) +
+      condition + gender + student + age,
+    data = model_data,
+    seed = 0,
+    cores = 4
+  )
+  m5$loo <- rstanarm::loo(m5, cores = 3)
+  m5
 })
+
+m5
+```
+
+```{r}
+bayestestR::describe_posterior(
+  m5,
+  ci = 0.89,
+  parameters = "age",
+  effects = "all"
+)
+```
+
+### Model comparison
+
+Between the 3 models tested, models 2 and 3 were far superior to model 1 which only had covariates for the cartoon.
+Model 3 was perhaps slightly better than 2, but the standard error in the comparison is larger than the difference, suggesting that either are reasonable.
+
+```{r}
+stash("model_comparison", depends_on = c(glue("m{1:5}"), "model_data"), {
+  model_comparison <- loo_compare(m1, m2, m3, m4, m5)
+})
+
 model_comparison
 ```
 
 ```{r}
-m2_pred <- as.data.frame(t(as.matrix(posterior_predict(m2))))
-m2_pred_mean <- apply(m2_pred, 1, mean)
+plot_real_vs_predicted <- function(m, data, model_name) {
+  m_pred <- as.data.frame(t(as.matrix(posterior_predict(m))))
+  m_pred_mean <- apply(m_pred, 1, mean)
 
-model_data %>%
-  mutate(post_pred = m2_pred_mean) %>%
-  ggplot(aes(rating, post_pred)) +
-  geom_jitter(aes(color = post_pred - rating), width = 0.1, height = 0.1) +
-  scale_x_continuous(breaks = 0:10) +
-  scale_y_continuous(breaks = 0:10) +
-  scale_color_gradient2(mid = "grey70") +
-  coord_fixed() +
-  labs(
-    x = "subject rating",
-    y = "predicted rating",
-    color = "error",
-    title = "Posterior predictions by Model 2"
-  )
+  model_data %>%
+    mutate(post_pred = m_pred_mean) %>%
+    ggplot(aes(rating, post_pred)) +
+    geom_jitter(aes(color = post_pred - rating), width = 0.1, height = 0.1) +
+    scale_x_continuous(breaks = 0:10) +
+    scale_y_continuous(breaks = 0:10) +
+    scale_color_gradient2(mid = "grey70") +
+    coord_fixed() +
+    labs(
+      x = "subject rating",
+      y = "predicted rating",
+      color = "error",
+      title = glue("Posterior predictions by {model_name}")
+    )
+}
+
+plot_real_vs_predicted(m1, model_data, "Model 1")
+plot_real_vs_predicted(m2, model_data, "Model 2")
+plot_real_vs_predicted(m3, model_data, "Model 3")
+plot_real_vs_predicted(m4, model_data, "Model 4")
 ```
+
+## Conclusions
+
+TODO

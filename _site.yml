@@ -5,7 +5,7 @@ repository_url: https://github.com/jhrcook/wagenmaker-data-analysis
 description: |
   "My own visualization and statistical analysis of the results from a replication study of the classic physicology study, *Inhibiting and Facilitating Conditions of the Human Smile: A Nonobtrusive Test of the Facial Feedback Hypothesis* by Strack, Martin, and Stepper (1988)."
 output_dir: "docs"
-exclude: ["data/*.csv"]
+exclude: ["data/*.csv", "Makefile"]
 navbar:
   search: true
   right:

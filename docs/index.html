@@ -2109,12 +2109,24 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <nav class="l-text toc figcaption" id="TOC">
 <h3>Contents</h3>
 <ul>
+<li><a href="#background">Background</a></li>
 <li><a href="#data-preparation">Data preparation</a></li>
 <li><a href="#data-visualization">Data visualization</a></li>
 <li><a href="#analysis">Analysis</a></li>
+<li><a href="#model-1.-covariate-per-cartoon">Model 1. Covariate per cartoon</a>
+<ul>
+<li><a href="#model-2.-covariates-per-cartoon-and-experimental-condition">Model 2. Covariates per cartoon and experimental condition</a></li>
+<li><a href="#model-3.-varying-intercepts-per-subject-and-cartoon">Model 3. Varying intercepts per subject and cartoon</a></li>
+<li><a href="#model-4.-description">Model 4. Description…</a></li>
+<li><a href="#model-5.-varying-effect-of-age-per-cartoon">Model 5. Varying effect of age per cartoon</a></li>
+<li><a href="#model-comparison">Model comparison</a></li>
+<li><a href="#conclusions">Conclusions</a></li>
+</ul></li>
 </ul>
 </nav>
 </div>
+<h2 id="background">Background</h2>
+<p>TODO (from README)</p>
 <h2 id="data-preparation">Data preparation</h2>
 <p>Below is the code for preparaing the data. Two subjects, 63 and 39, were removed because they had a lot of missing data points. Otherwise, the data was left as is and only rearranged for ease of use in data visualization and modeling.</p>
 <div class="layout-chunk" data-layout="l-body">
@@ -2251,14 +2263,148 @@ rating
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
+<h1 id="model-1.-covariate-per-cartoon">Model 1. Covariate per cartoon</h1>
+<p>Simple model: <code>rating ~ 1 + cartoon_number</code></p>
 <div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://jhrcook.github.io/mustashe/reference/stash.html'>stash</a></span><span class='op'>(</span><span class='st'>"m1"</span>, depends_on <span class='op'>=</span> <span class='st'>"model_data"</span>, <span class='op'>{</span>
+  <span class='va'>m1</span> <span class='op'>&lt;-</span> <span class='fu'>stan_lm</span><span class='op'>(</span>
+    <span class='va'>rating</span> <span class='op'>~</span> <span class='fl'>1</span> <span class='op'>+</span> <span class='va'>cartoon_number</span>,
+    data <span class='op'>=</span> <span class='va'>model_data</span>,
+    prior <span class='op'>=</span> <span class='fu'>R2</span><span class='op'>(</span><span class='fl'>0.5</span><span class='op'>)</span>,
+    prior_intercept <span class='op'>=</span> <span class='fu'>normal</span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>5</span><span class='op'>)</span>,
+    seed <span class='op'>=</span> <span class='fl'>0</span>,
+    cores <span class='op'>=</span> <span class='fl'>2</span>
+  <span class='op'>)</span>
+  <span class='va'>m1</span><span class='op'>$</span><span class='va'>loo</span> <span class='op'>&lt;-</span> <span class='fu'>rstanarm</span><span class='fu'>::</span><span class='fu'><a href='https://mc-stan.org/rstanarm/reference/loo.stanreg.html'>loo</a></span><span class='op'>(</span><span class='va'>m1</span>, cores <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
+  <span class='va'>m1</span>
+<span class='op'>}</span><span class='op'>)</span>
 
+<span class='va'>m1</span>
+</code></pre>
 </div>
+<pre><code>#&gt; stan_lm
+#&gt;  family:       gaussian [identity]
+#&gt;  formula:      rating ~ 1 + cartoon_number
+#&gt;  observations: 514
+#&gt;  predictors:   4
+#&gt; ------
+#&gt;                         Median MAD_SD
+#&gt; (Intercept)             4.4    0.2   
+#&gt; cartoon_numberCartoon 2 0.8    0.2   
+#&gt; cartoon_numberCartoon 3 0.0    0.2   
+#&gt; cartoon_numberCartoon 4 0.9    0.2   
+#&gt; 
+#&gt; Auxiliary parameter(s):
+#&gt;               Median MAD_SD
+#&gt; R2            0.0    0.0   
+#&gt; log-fit_ratio 0.0    0.0   
+#&gt; sigma         2.0    0.1   
+#&gt; 
+#&gt; ------
+#&gt; * For help interpreting the printed output see ?print.stanreg
+#&gt; * For info on the priors used see ?prior_summary.stanreg</code></pre>
+</div>
+<p>The chains mix well and converge.</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="index_files/figure-html5/unnamed-chunk-13-1.png" width="2600" /></p>
 </div>
+<p>The posterior distributions for the cartoons (Cartoon 1 is represented as the intercept) look good. They suggest that, on average, cartoon 2 and 4 were funnier than 1 and 3.</p>
 <div class="layout-chunk" data-layout="l-body">
+<p><img src="index_files/figure-html5/unnamed-chunk-14-1.png" width="2600" /></p>
+</div>
+<p>This simple model really just estimates the average rating for each cartoon.</p>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="index_files/figure-html5/unnamed-chunk-15-1.png" width="2600" /></p>
+</div>
+<h3 id="model-2.-covariates-per-cartoon-and-experimental-condition">Model 2. Covariates per cartoon and experimental condition</h3>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://jhrcook.github.io/mustashe/reference/stash.html'>stash</a></span><span class='op'>(</span><span class='st'>"m2"</span>, depends_on <span class='op'>=</span> <span class='st'>"model_data"</span>, <span class='op'>{</span>
+  <span class='va'>m2</span> <span class='op'>&lt;-</span> <span class='fu'>stan_lm</span><span class='op'>(</span>
+    <span class='va'>rating</span> <span class='op'>~</span> <span class='fl'>1</span> <span class='op'>+</span> <span class='va'>cartoon_number</span> <span class='op'>+</span> <span class='va'>condition</span>,
+    data <span class='op'>=</span> <span class='va'>model_data</span>,
+    prior <span class='op'>=</span> <span class='fu'>R2</span><span class='op'>(</span><span class='fl'>0.5</span><span class='op'>)</span>,
+    prior_intercept <span class='op'>=</span> <span class='fu'>normal</span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>5</span><span class='op'>)</span>,
+    seed <span class='op'>=</span> <span class='fl'>0</span>,
+    cores <span class='op'>=</span> <span class='fl'>4</span>
+  <span class='op'>)</span>
+  <span class='va'>m2</span><span class='op'>$</span><span class='va'>loo</span> <span class='op'>&lt;-</span> <span class='fu'>rstanarm</span><span class='fu'>::</span><span class='fu'><a href='https://mc-stan.org/rstanarm/reference/loo.stanreg.html'>loo</a></span><span class='op'>(</span><span class='va'>m2</span>, cores <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
+  <span class='va'>m2</span>
+<span class='op'>}</span><span class='op'>)</span>
 
+<span class='va'>m2</span>
+</code></pre>
+</div>
+<pre><code>#&gt; stan_lm
+#&gt;  family:       gaussian [identity]
+#&gt;  formula:      rating ~ 1 + cartoon_number + condition
+#&gt;  observations: 514
+#&gt;  predictors:   5
+#&gt; ------
+#&gt;                         Median MAD_SD
+#&gt; (Intercept)             4.4    0.2   
+#&gt; cartoon_numberCartoon 2 0.8    0.3   
+#&gt; cartoon_numberCartoon 3 0.0    0.2   
+#&gt; cartoon_numberCartoon 4 0.9    0.3   
+#&gt; conditionsmile          0.0    0.2   
+#&gt; 
+#&gt; Auxiliary parameter(s):
+#&gt;               Median MAD_SD
+#&gt; R2            0.1    0.0   
+#&gt; log-fit_ratio 0.0    0.0   
+#&gt; sigma         2.0    0.1   
+#&gt; 
+#&gt; ------
+#&gt; * For help interpreting the printed output see ?print.stanreg
+#&gt; * For info on the priors used see ?prior_summary.stanreg</code></pre>
+</div>
+<p>Even in this simple model, there is no evidence that the experimental condition (frown vs. smile) has any effect.</p>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="index_files/figure-html5/unnamed-chunk-17-1.png" width="2600" /></p>
+</div>
+<h3 id="model-3.-varying-intercepts-per-subject-and-cartoon">Model 3. Varying intercepts per subject and cartoon</h3>
+<p>Model 3: <code>rating ~ (1 | subject_number) + (1 | cartoon_number) + condition</code>.</p>
+<p>A varying intercept per subject (132) and cartoon (4) with a single factor for the experimental condition where the intercept incorporates the frown group and the smile group is represented by <code>conditionsmile</code>.</p>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://jhrcook.github.io/mustashe/reference/stash.html'>stash</a></span><span class='op'>(</span><span class='st'>"m3"</span>, depends_on <span class='op'>=</span> <span class='st'>"model_data"</span>, <span class='op'>{</span>
+  <span class='va'>m3</span> <span class='op'>&lt;-</span> <span class='fu'>stan_lmer</span><span class='op'>(</span>
+    <span class='va'>rating</span> <span class='op'>~</span> <span class='op'>(</span><span class='fl'>1</span> <span class='op'>|</span> <span class='va'>subject_number</span><span class='op'>)</span> <span class='op'>+</span> <span class='op'>(</span><span class='fl'>1</span> <span class='op'>|</span> <span class='va'>cartoon_number</span><span class='op'>)</span> <span class='op'>+</span> <span class='va'>condition</span>,
+    data <span class='op'>=</span> <span class='va'>model_data</span>,
+    seed <span class='op'>=</span> <span class='fl'>0</span>,
+    cores <span class='op'>=</span> <span class='fl'>3</span>
+  <span class='op'>)</span>
+  <span class='va'>m3</span><span class='op'>$</span><span class='va'>loo</span> <span class='op'>&lt;-</span> <span class='fu'>rstanarm</span><span class='fu'>::</span><span class='fu'><a href='https://mc-stan.org/rstanarm/reference/loo.stanreg.html'>loo</a></span><span class='op'>(</span><span class='va'>m3</span>, cores <span class='op'>=</span> <span class='fl'>3</span>, k_threshold <span class='op'>=</span> <span class='fl'>0.7</span><span class='op'>)</span>
+  <span class='va'>m3</span>
+<span class='op'>}</span><span class='op'>)</span>
+
+<span class='va'>m3</span>
+</code></pre>
+</div>
+<pre><code>#&gt; stan_lmer
+#&gt;  family:       gaussian [identity]
+#&gt;  formula:      rating ~ (1 | subject_number) + (1 | cartoon_number) + condition
+#&gt;  observations: 514
+#&gt; ------
+#&gt;                Median MAD_SD
+#&gt; (Intercept)    4.9    0.4   
+#&gt; conditionsmile 0.0    0.2   
+#&gt; 
+#&gt; Auxiliary parameter(s):
+#&gt;       Median MAD_SD
+#&gt; sigma 1.8    0.1   
+#&gt; 
+#&gt; Error terms:
+#&gt;  Groups         Name        Std.Dev.
+#&gt;  subject_number (Intercept) 0.90    
+#&gt;  cartoon_number (Intercept) 0.84    
+#&gt;  Residual                   1.82    
+#&gt; Num. levels: subject_number 132, cartoon_number 4 
+#&gt; 
+#&gt; ------
+#&gt; * For help interpreting the printed output see ?print.stanreg
+#&gt; * For info on the priors used see ?prior_summary.stanreg</code></pre>
 </div>
 <div class="layout-chunk" data-layout="l-body">
 <pre><code>#&gt; # A tibble: 6 x 12
@@ -2273,26 +2419,160 @@ rating
 #&gt; # … with 4 more variables: ROPE_high &lt;dbl&gt;, ROPE_Percentage &lt;dbl&gt;,
 #&gt; #   Rhat &lt;dbl&gt;, ESS &lt;dbl&gt;</code></pre>
 </div>
-<div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-16-1.png" width="2600" /></p>
-</div>
-<div class="layout-chunk" data-layout="l-body">
-<p><img src="index_files/figure-html5/unnamed-chunk-17-1.png" width="2600" /></p>
-</div>
-<div class="layout-chunk" data-layout="l-body">
-
-</div>
-<div class="layout-chunk" data-layout="l-body">
-<pre><code>#&gt; Model comparison based on LOO-CV: 
-#&gt;    elpd_diff se_diff
-#&gt; m3   0.0       0.0  
-#&gt; m2  -0.5       2.0  
-#&gt; m1 -19.8       7.6</code></pre>
-</div>
+<p>Looking at the posterior distributions of the covariates, we can see again that cartoons 2 and 4 tended to be more amusing than 1 and 3. However, the posterior for the smile covariate stradles 0, indicating this experimental condition had no effect on the rating.</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="index_files/figure-html5/unnamed-chunk-20-1.png" width="2600" /></p>
 </div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<p>Below are the estimated varying effects for participants. Most were small, but a few participants were consistently less amused or more amused by the cartoons.</p>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="index_files/figure-html5/unnamed-chunk-21-1.png" width="2600" /></p>
+</div>
+<h3 id="model-4.-description">Model 4. Description…</h3>
+<p>Model 4: <code>rating ~ (1 | subject_number) + (1 | cartoon_number) + condition + gender + student + age</code></p>
+<p>Now use all available factors including the sex and age of the participant and whether or not they were a student.</p>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://jhrcook.github.io/mustashe/reference/stash.html'>stash</a></span><span class='op'>(</span><span class='st'>"m4"</span>, depends_on <span class='op'>=</span> <span class='st'>"model_data"</span>, <span class='op'>{</span>
+  <span class='va'>m4</span> <span class='op'>&lt;-</span> <span class='fu'>stan_lmer</span><span class='op'>(</span>
+    <span class='va'>rating</span> <span class='op'>~</span> <span class='op'>(</span><span class='fl'>1</span> <span class='op'>|</span> <span class='va'>subject_number</span><span class='op'>)</span> <span class='op'>+</span> 
+      <span class='op'>(</span><span class='fl'>1</span> <span class='op'>|</span> <span class='va'>cartoon_number</span><span class='op'>)</span> <span class='op'>+</span> 
+      <span class='va'>condition</span> <span class='op'>+</span> <span class='va'>gender</span> <span class='op'>+</span> <span class='va'>student</span> <span class='op'>+</span> <span class='va'>age</span>,
+    data <span class='op'>=</span> <span class='va'>model_data</span>,
+    seed <span class='op'>=</span> <span class='fl'>0</span>,
+    cores <span class='op'>=</span> <span class='fl'>2</span>
+  <span class='op'>)</span>
+  <span class='va'>m4</span><span class='op'>$</span><span class='va'>loo</span> <span class='op'>&lt;-</span> <span class='fu'>rstanarm</span><span class='fu'>::</span><span class='fu'><a href='https://mc-stan.org/rstanarm/reference/loo.stanreg.html'>loo</a></span><span class='op'>(</span><span class='va'>m4</span>, cores <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
+  <span class='va'>m4</span>
+<span class='op'>}</span><span class='op'>)</span>
+
+<span class='va'>m4</span>
+</code></pre>
+</div>
+<pre><code>#&gt; stan_lmer
+#&gt;  family:       gaussian [identity]
+#&gt;  formula:      rating ~ (1 | subject_number) + (1 | cartoon_number) + condition + 
+#&gt;     gender + student + age
+#&gt;  observations: 514
+#&gt; ------
+#&gt;                Median MAD_SD
+#&gt; (Intercept)     2.2    1.0  
+#&gt; conditionsmile -0.1    0.2  
+#&gt; genderM         0.0    0.2  
+#&gt; studentTRUE     0.8    0.5  
+#&gt; age             0.1    0.0  
+#&gt; 
+#&gt; Auxiliary parameter(s):
+#&gt;       Median MAD_SD
+#&gt; sigma 1.8    0.1   
+#&gt; 
+#&gt; Error terms:
+#&gt;  Groups         Name        Std.Dev.
+#&gt;  subject_number (Intercept) 0.86    
+#&gt;  cartoon_number (Intercept) 0.88    
+#&gt;  Residual                   1.83    
+#&gt; Num. levels: subject_number 132, cartoon_number 4 
+#&gt; 
+#&gt; ------
+#&gt; * For help interpreting the printed output see ?print.stanreg
+#&gt; * For info on the priors used see ?prior_summary.stanreg</code></pre>
+</div>
+<p>While the smile/frown condition still appears to be inconsequential along with gender, the impact of student and age may be meaningful. In particular, there may be a small but significant positive assoication between participant age and cartoon rating.</p>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="index_files/figure-html5/unnamed-chunk-23-1.png" width="2600" /></p>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="index_files/figure-html5/unnamed-chunk-24-1.png" width="2600" /></p>
+</div>
+<h3 id="model-5.-varying-effect-of-age-per-cartoon">Model 5. Varying effect of age per cartoon</h3>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://jhrcook.github.io/mustashe/reference/stash.html'>stash</a></span><span class='op'>(</span><span class='st'>"m5"</span>, depends_on <span class='op'>=</span> <span class='st'>"model_data"</span>, <span class='op'>{</span>
+  <span class='va'>m5</span> <span class='op'>&lt;-</span> <span class='fu'>stan_lmer</span><span class='op'>(</span>
+    <span class='va'>rating</span> <span class='op'>~</span> <span class='op'>(</span><span class='fl'>1</span> <span class='op'>|</span> <span class='va'>subject_number</span><span class='op'>)</span> <span class='op'>+</span>
+      <span class='op'>(</span><span class='fl'>1</span> <span class='op'>+</span> <span class='va'>age</span> <span class='op'>+</span> <span class='va'>condition</span> <span class='op'>|</span> <span class='va'>cartoon_number</span><span class='op'>)</span> <span class='op'>+</span>
+      <span class='va'>condition</span> <span class='op'>+</span> <span class='va'>gender</span> <span class='op'>+</span> <span class='va'>student</span> <span class='op'>+</span> <span class='va'>age</span>,
+    data <span class='op'>=</span> <span class='va'>model_data</span>,
+    seed <span class='op'>=</span> <span class='fl'>0</span>,
+    cores <span class='op'>=</span> <span class='fl'>4</span>
+  <span class='op'>)</span>
+  <span class='va'>m5</span><span class='op'>$</span><span class='va'>loo</span> <span class='op'>&lt;-</span> <span class='fu'>rstanarm</span><span class='fu'>::</span><span class='fu'><a href='https://mc-stan.org/rstanarm/reference/loo.stanreg.html'>loo</a></span><span class='op'>(</span><span class='va'>m5</span>, cores <span class='op'>=</span> <span class='fl'>3</span><span class='op'>)</span>
+  <span class='va'>m5</span>
+<span class='op'>}</span><span class='op'>)</span>
+
+<span class='va'>m5</span>
+</code></pre>
+</div>
+<pre><code>#&gt; stan_lmer
+#&gt;  family:       gaussian [identity]
+#&gt;  formula:      rating ~ (1 | subject_number) + (1 + age + condition | cartoon_number) + 
+#&gt;     condition + gender + student + age
+#&gt;  observations: 514
+#&gt; ------
+#&gt;                Median MAD_SD
+#&gt; (Intercept)     2.2    1.0  
+#&gt; conditionsmile -0.1    0.2  
+#&gt; genderM         0.0    0.2  
+#&gt; studentTRUE     0.8    0.5  
+#&gt; age             0.1    0.0  
+#&gt; 
+#&gt; Auxiliary parameter(s):
+#&gt;       Median MAD_SD
+#&gt; sigma 1.8    0.1   
+#&gt; 
+#&gt; Error terms:
+#&gt;  Groups         Name           Std.Dev. Corr       
+#&gt;  subject_number (Intercept)    0.864               
+#&gt;  cartoon_number (Intercept)    0.220               
+#&gt;                 age            0.047    -0.04      
+#&gt;                 conditionsmile 0.114     0.03  0.04
+#&gt;  Residual                      1.827               
+#&gt; Num. levels: subject_number 132, cartoon_number 4 
+#&gt; 
+#&gt; ------
+#&gt; * For help interpreting the printed output see ?print.stanreg
+#&gt; * For info on the priors used see ?prior_summary.stanreg</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre><code>#&gt; Summary of Posterior Distribution
+#&gt; 
+#&gt; Parameter | Median |        89% CI |     pd |          ROPE | % in ROPE |  Rhat |     ESS
+#&gt; -----------------------------------------------------------------------------------------
+#&gt; age       |   0.09 | [ 0.03, 0.15] | 98.95% | [-0.21, 0.21] |      100% | 1.001 | 2132.00
+#&gt; 
+#&gt; # Random effects age: cartoon_number
+#&gt; 
+#&gt; Parameter                | Median |        89% CI |     pd |          ROPE | % in ROPE |  Rhat |     ESS
+#&gt; --------------------------------------------------------------------------------------------------------
+#&gt; cartoon_number:Cartoon_1 |  -0.02 | [-0.05, 0.01] | 85.12% | [-0.21, 0.21] |      100% | 1.002 | 1604.00
+#&gt; cartoon_number:Cartoon_2 |   0.01 | [-0.02, 0.04] | 77.08% | [-0.21, 0.21] |      100% | 1.002 | 1595.00
+#&gt; cartoon_number:Cartoon_3 |  -0.01 | [-0.05, 0.02] | 78.65% | [-0.21, 0.21] |      100% | 1.003 | 1520.00
+#&gt; cartoon_number:Cartoon_4 |   0.02 | [-0.01, 0.05] | 85.30% | [-0.21, 0.21] |      100% | 1.002 | 1779.00
+#&gt; 
+#&gt; # Random effects SD/Cor: cartoon_number
+#&gt; 
+#&gt; Parameter            |   Median |        89% CI |     pd |          ROPE | % in ROPE |  Rhat |     ESS
+#&gt; ------------------------------------------------------------------------------------------------------
+#&gt; age ~ (Intercept)    | 1.49e-05 | [-0.01, 0.00] | 51.78% | [-0.21, 0.21] |      100% | 1.001 | 2977.00
+#&gt; age                  | 7.84e-04 | [ 0.00, 0.00] |   100% | [-0.21, 0.21] |      100% | 1.007 |  490.00
+#&gt; conditionsmile ~ age | 2.13e-05 | [ 0.00, 0.00] | 53.15% | [-0.21, 0.21] |      100% | 1.005 |  553.00</code></pre>
+</div>
+<h3 id="model-comparison">Model comparison</h3>
+<p>Between the 3 models tested, models 2 and 3 were far superior to model 1 which only had covariates for the cartoon. Model 3 was perhaps slightly better than 2, but the standard error in the comparison is larger than the difference, suggesting that either are reasonable.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre><code>#&gt; Model comparison based on LOO-CV: 
+#&gt;    elpd_diff se_diff
+#&gt; m4   0.0       0.0  
+#&gt; m3  -0.5       2.0  
+#&gt; m5  -1.6       0.8  
+#&gt; m1 -19.8       7.6  
+#&gt; m2 -20.7       7.6</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="index_files/figure-html5/unnamed-chunk-28-1.png" width="2600" /><img src="index_files/figure-html5/unnamed-chunk-28-2.png" width="2600" /><img src="index_files/figure-html5/unnamed-chunk-28-3.png" width="2600" /><img src="index_files/figure-html5/unnamed-chunk-28-4.png" width="2600" /></p>
+</div>
+<h2 id="conclusions">Conclusions</h2>
+<p>TODO</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <!--radix_placeholder_article_footer-->
 <!--/radix_placeholder_article_footer-->
 </div>

@@ -12,7 +12,7 @@ install:
 	Rscript -e "renv::restore()"
 
 style:
-	Rscript -e "styler::style()"
+	Rscript -e "styler::style_dir()"
 
 build: style
 	Rscript -e "rmarkdown::render_site()"
