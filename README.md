@@ -1,6 +1,6 @@
 # Analysis of *Registered Replication Report: Strack, Martin, & Stepper (1988)* by Wagenmaker *et al.*
 
-[![r](https://img.shields.io/badge/R-4.0.2-276DC3.svg?style=flat&logo=r)](https://www.r-project.org)
+[![r](https://img.shields.io/badge/R-4.1.0-276DC3.svg?style=flat&logo=r)](https://www.r-project.org)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 ---

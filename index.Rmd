@@ -11,6 +11,7 @@ date: "May 23, 2021"
 output:
   distill::distill_article:
     toc: true
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -32,13 +33,56 @@ theme_set(
 )
 ```
 
-## Background
+## Introduction
 
-TODO (from README)
+### Background
+
+In his famous book, [*Thinking Fast and Slow*](https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow), [Daniel Kahneman](https://en.wikipedia.org/wiki/Daniel_Kahneman) describes how our mind acts in many ways that we are completely unaware of.
+One such phenomenon is "priming" where one event (e.g. hearing a word spoken, seeing an image) brings associated ideas into our mind and available for faster recall than other terms.
+One form of priming is that a physical movement we make can affect how our mind behave.
+
+One example that Kahneman provides was illustrated by Strack *et al.* in 1988 where they asked participants to rate their perceived level of amusement of several [The Far Side](https://en.wikipedia.org/wiki/The_Far_Side) cartoons [@Strack1988-zd].
+The caveat was that the participants viewed the comics while holding a pencil with their teeth, either sideways with the eraser pointing to their right or pointing forwards with the eraser between their teeth.
+The first pose induces a facial expression similar to smiling whereas the latter causes a frowning motion, but the participants are unaware of this effect.
+This acts as a primer to make the participants easier or harder to amuse, respectively, and this was measured by a reduced rating of the cartoons by the frowning group.
+
+This was just one example provided by Kahneman, but I was curious about the actual effect size of these phenomenon.
+Is this causing swings from elation to depression, or from mild pleasure to mild displeasure?
+How influential were these priming effects?
+So I decided to look up this paper, "Inhibiting and Facilitating Conditions of the Human Smile: A Nonobtrusive Test of the Facial Feedback Hypothesis" ([PDF](papers/Strack_1988_Inhibiting-and-facilitating-conditions-of-the-human-smile-a-nonobtrusive-test-of-the-facial-feedback-hypothesis.pdf)), and do some analysis for myself.
+Unfortunately, the original data is not provided with the paper, but I did find a replication of the experiment, "Registered Replication Report: Strack, Martin, & Stepper (1988)" ([PDF](papers/Acosta-et-al_2016_APS.pdf)) [@Acosta2016-bj].
+I was able to acquire this data set and conduct a statistical analysis for myself.
+
+### Experimental procedure
+
+Below is the experimental producer of the replication report [@Acosta2016-bj].
+
+>Participants worked through the tasks in the task booklet while holding the pen in their mouth.
+> The first task was to draw lines between a series of successive numbers and the second task was to underline vowels.
+> The third and crucial task was to rate how amused they were by four cartoons.
+> For each cartoon, participants answered the question “What feeling was elicited in you by looking at the cartoon?” by using a 10-point Likert scale ranging from 0 (I felt not at all amused) to 9 (I felt very much amused).
+>
+>After these tasks, participants removed the pen from their mouths and completed an exit questionnaire that asked three questions: (a) “How successful were you in holding the pen in the correct position during the entire experimental session?” (the answer was indicated on a 10-point Likert scale, as in SMS Study 2); (b) “Did you understand the cartoons?” (yes/no); and (c) “What do you think the purpose of this experiment is?” (open-ended).
+
+Below is an image demonstrating the positions.
+
+```{r pencil-demo, fig.cap="Demonstration of holding the pencil to force a smile (left) or frown (right) [@Acosta2016-bj]."}
+knitr::include_graphics("papers/Acosta_2016_fig1.png")
+```
+
+There were a few criteria by which a data point or participant could be excluded from the data set.
+There are reproduced below and the excluded data points were indicated in the published data set.
+
+> Exclusion criteria were deliberately strict.
+> Data were excluded from participants whose average cartoon rating exceeded 2.5 standard deviations from the group mean in their condition.
+> Data were excluded if, based on the exit questionnaire, participants correctly guessed the goal of the study (i.e., the position of the pen influences the funniness ratings for the cartoons).
+> Data were also excluded if a participant answered “No” to the question “Did you understand the cartoons?”.
+> Finally, data were excluded from participants who held the pen incorrectly for two or more of the cartoons (based on the video recordings).
+> If participants held the pen incorrectly for just one cartoon, data from that cartoon rating were excluded from analyses.
 
 ## Data preparation
 
-Below is the code for preparaing the data.
+Below is the code for preparing the data.
 Two subjects, 63 and 39, were removed because they had a lot of missing data points.
 Otherwise, the data was left as is and only rearranged for ease of use in data visualization and modeling.
 
