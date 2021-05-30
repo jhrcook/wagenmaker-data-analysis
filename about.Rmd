@@ -1,5 +1,5 @@
 ---
-title: "About the studies"
+title: "More information"
 description: |
   More information on the original Strack *et al* (1988) study and the replication study by Wagenmaker *et al.* (2016)
 author:
@@ -7,16 +7,65 @@ author:
     last_name: "Cook"
     url: https://joshuacook.netlify.app
     orcid_id: 0000-0001-9815-6879
-date: "January 31, 2021"
+date: "May 30, 2021"
 output:
   distill::distill_article:
     toc: true
+bibliography: bibliography.bib
+repository_url: https://github.com/jhrcook/wagenmaker-data-analysis
+creative_commons: CC BY-SA
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, comment = "#>", dpi = 400)
 ```
 
-Distill is a publication format for scientific and technical writing, native to the web.
+## The author
 
-Learn more about using Distill for R Markdown at <https://rstudio.github.io/distill>.
+Josh is a computational biologist pursuing his PhD. at Harvard Medical School.
+There, he is co-advised by Professor Kevin Haigis and Professor Peter Park as he studies cancer genetics and evolution.
+Specifically, he is working to understand the tissue-specific behavior of KRAS mutations in cancers.
+
+In his free time, Josh enjoys learning about programming and computer science - his current project is creating a MacOS app to summarize text using machine learning.
+Off the computer, his hobbies include running and caring for his plants.
+
+You can see more of my blog posts (usually about coding in Python or R) and projects on my website: [https://joshuacook.netlify.app](https://joshuacook.netlify.app).
+
+## The study
+
+Below is a excerpt from Wagenmakers *et al.* [@Wagenmakers2016-bj] describing the original study by Strack, Martin, and Stepper titled “Inhibiting and Facilitating Conditions of the Human Smile: A Nonobtrusive Test of the Facial Feedback Hypothesis” [@Strack1988-zd]:
+
+> Could smiling make us happier?
+> Does frowning make us sad?
+> In their seminal article, Strack, Martin, and Stepper (1988; henceforth SMS) tested this facial feedback hypothesis: Are our affective responses guided, in part, by our own facial expressions?
+> In two studies, they induced different groups of participants to produce a facial expression (i.e., smiling or pouting) usually associated with a particular emotional state (i.e., happiness or discontent).
+> They then measured whether that induced facial expression changed judgments in ways consistent with the associated emotional states.
+>
+> Specifically, Strack and colleagues had participants rate the funniness of cartoons using a pen that they held in their mouth, purportedly to investigate “people’s ability to perform different tasks with parts of their body not normally used for those tasks, as injured or handicapped persons often have to do.
+> Participants were then asked to perform a variety of tasks by holding a pen with their lips only, with their teeth only, or with their nondominant hand” [@Strack1988-zd].
+> As depicted in Figure 1, holding the pen with one’s teeth induces a smile and holding it with one’s lips induces a pout.
+> In SMS Study 1, participants rated the cartoons as funnier in the teeth condition (5.14) than in the lips condition (4.32) on a 10-point Likert scale ranging from 0 (not at all funny) to 9 (very funny).
+> These results were taken to support the facial feedback hypothesis.
+>
+> SMS has been cited 1,370 times (according to Google Scholar as of May 26, 2016) and is commonly discussed in introductory psychology courses and textbooks.
+> Moreover, the facial feedback hypothesis is supported by a number of related studies (e.g., [@kraft_pressman_2012] [@larsen_kasimatis_frey_1992] [@soussignan_2002]).
+> However, this seminal experiment has not been replicated directly using the same design and the same dependent variable.
+> The enduring impact of SMS and the lack of direct replications together motivated this Registered Replication Report (RRR), in which 17 laboratories each conducted a direct replication study of Study 1 from SMS using a vetted protocol.
+> By combining the results of these direct replications meta-analytically, we can provide a more precise estimate of the size of this important effect.
+
+```{r pencil-demo, fig.cap="Demonstration of holding the pencil to force a smile (left) or frown (right) [@Wagenmakers2016-bj]."}
+knitr::include_graphics("papers/Acosta_2016_fig1.png")
+```
+
+## Tools
+
+This analysis was completely done in [R](https://www.r-project.org/) using the [RStudio](https://www.rstudio.com/) integrated development environment [@r_lang].
+
+### 'rstanarm'
+
+The ['rstanarm'](http://mc-stan.org/rstanarm/) package provided the Bayesian data analysis framework that I used for this analysis [@rstanarm].
+It provides a simple "R formula syntax" interface to the Stan probabilistic programming language [@stan].
+
+### 'distill'
+
+The website was build using ['rmarkdown'](https://github.com/rstudio/rmarkdown) and ['distill'](https://rstudio.github.io/distill/) [@rmarkdown][@rmarkdown_guide][@distill].
