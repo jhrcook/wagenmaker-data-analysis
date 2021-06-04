@@ -1,7 +1,7 @@
 ---
 title: "Analyzing the results of \"Inhibiting and Facilitating Conditions of the Human Smile: A Nonobtrusive Test of the Facial Feedback Hypothesis\""
 description: |
-  My own visualization and statistical analysis of the data from a replication study of this famous phsycology paper.
+  My own visualization and statistical analysis of the data from a replication study of this famous psychology paper.
 author:
   - first_name: "Joshua"
     last_name: "Cook"
